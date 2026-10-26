@@ -3,13 +3,20 @@ package security
 import (
 	"crypto/rand"
 	"encoding/hex"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-
-func GenerateRandomSecret()(string ,error) {
+func GenerateRandomSecret() (string, error) {
 	bytes := make([]byte, 32)
-	if _, err := rand.Read(bytes); err != nil{
+	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}
 	return hex.EncodeToString(bytes), nil
+}
+
+// HashBcrypt hashes user passwords or app secrets
+func HashBcrypt(plain string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
+	return string(bytes), err
 }
