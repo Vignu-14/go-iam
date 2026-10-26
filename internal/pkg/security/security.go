@@ -20,3 +20,8 @@ func HashBcrypt(plain string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
 	return string(bytes), err
 }
+
+// VerifyBcrypt checks if a plain password/secret matches its bcrypt hash
+func VerifyBcrypt(plain, hash string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain)) == nil
+}
