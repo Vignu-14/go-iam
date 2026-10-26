@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"go-iam/internal/pkg/security"
 	"net/http"
 	"uuid"
 
@@ -34,11 +35,29 @@ func RequireAppID(db *pgxpool.Pool) func(http.Handler) http.Handler {
 	}
 }
 
-
-func RequireAppOwner(db *pgxpool.Pool) func(http.Handler) http.Handler{
-	return func(next http.Handler) http.Handler{
+func RequireAppOwner(db *pgxpool.Pool) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			
+			appID, err := uuid.Parse(r.Header.Get("X-App-ID"))
+			appSecret := r.Header.Get("X-app-Secret")
+			if err != nil || appSecret == "" {
+				http.Error(w, `{"error":"missing X-App-ID or X-App-Secret"}`, http.StatusUnauthorized)
+				return
+			}
+			var secretHash string
+			var isActive bool
+
+			err = db.QueryRow(r.Context(),
+				`SELECT app_secret_hash, is_active FROM apps WHERE id = $1`, appID,
+			).Scan(&secretHash, &isActive)
+
+			if err != nil || !isActive || !security.VerifyBcrypt(appSecret, secretHash) {
+				http.Error(w, `{"error":"invalid app credentials"}`, http.StatusUnauthorized)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), AppIDContextKey, appID)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
