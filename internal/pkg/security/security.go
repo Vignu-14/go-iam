@@ -6,7 +6,8 @@ import (
 	"encoding/hex"
 	"go-iam/internal/domain"
 	"time"
-	"uuid"
+
+	"github.com/google/uuid"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
