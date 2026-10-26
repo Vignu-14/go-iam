@@ -25,3 +25,9 @@ func HashBcrypt(plain string) (string, error) {
 func VerifyBcrypt(plain, hash string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain)) == nil
 }
+
+// HashSHA256 is used for refresh tokens so we can look them up by index in O(log N) time
+func HashSHA256(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
