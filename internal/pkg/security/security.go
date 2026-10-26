@@ -2,8 +2,13 @@ package security
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
+	"go-iam/internal/domain"
+	"time"
+	"uuid"
 
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,4 +35,21 @@ func VerifyBcrypt(plain, hash string) bool {
 func HashSHA256(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+
+// GenerateAccessToken signs a 15-minute JWT using the App's own JWTSecret
+func GenerateAccessToken(userID, appID uuid.UUID, role, appJWTSecret string) (string, error) {
+	claims := domain.AccessTokenClaims{
+		UserID: userID,
+		AppID:  appID,
+		Role:   role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID.String(),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(appJWTSecret))
 }
